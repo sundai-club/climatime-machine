@@ -1,0 +1,152 @@
+require('dotenv').config();
+const express = require('express');
+const multer = require('multer');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(cors());
+app.use(express.json());
+app.use(express.static('public'));
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadsDir = './uploads';
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir);
+    }
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname);
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'), false);
+    }
+  },
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  }
+});
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash-image-preview';
+
+function analyzeWeatherConditions(description) {
+  const weatherMappings = {
+    sunny: 'extreme heat waves with scorching sun, drought conditions, wilted vegetation',
+    clear: 'extreme heat waves with scorching sun, drought conditions, wilted vegetation', 
+    bright: 'extreme heat waves with scorching sun, drought conditions, wilted vegetation',
+    rainy: 'severe flooding with water everywhere, heavy storms, submerged areas',
+    cloudy: 'extreme storms with dark threatening clouds, heavy rain and flooding',
+    snowy: 'complete ice age conditions with massive snowdrifts and frozen landscape',
+    windy: 'devastating hurricane-force winds with debris flying, destroyed structures',
+    foggy: 'thick toxic smog and pollution, apocalyptic atmosphere'
+  };
+
+  for (const [condition, effect] of Object.entries(weatherMappings)) {
+    if (description.toLowerCase().includes(condition)) {
+      return effect;
+    }
+  }
+  
+  return 'extreme climate change effects with rising sea levels and environmental devastation';
+}
+
+app.post('/analyze-and-generate', upload.single('photo'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No photo uploaded' });
+    }
+
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: 'GEMINI_API_KEY not configured' });
+    }
+
+    const model = genAI.getGenerativeModel({ model: modelName });
+
+    const imagePath = req.file.path;
+    const imageData = fs.readFileSync(imagePath);
+    const imageBase64 = imageData.toString('base64');
+
+    const generationPrompt = `Transform this image to show the same location 20 years in the future, dramatically affected by climate change.
+
+Keep the people recognizable with their EXACT original poses, but allow them to blend and adapt to the climate-transformed surroundings:
+- Same faces and identical poses/body positions as the original photo
+- Keep the exact same posture, arm positions, stance, and positioning
+- People should look weathered, affected by the climate conditions (dust, heat, cold, etc.)
+- Clothing can appear more worn, dirty, or weather-appropriate for the harsh conditions
+- Facial expressions can show the reality of living in this climate-changed world
+- Let environmental effects (dust, rain, heat distortion, shadows) naturally affect the people
+- People should feel integrated into the apocalyptic environment while maintaining their exact original poses
+
+Transform the ENVIRONMENT dramatically:
+- Same composition but climate-devastated surroundings
+- Show dramatic climate change impacts (extreme weather, rising seas, drought, storms, flooding, wildfires, pollution)
+- Make the environment look apocalyptic and devastated
+- Add realistic environmental damage and extreme weather effects
+- The lighting, atmosphere, and environmental conditions should affect everything in the scene
+
+Create a cohesive scene where the people belong in this climate-changed world while remaining recognizable.`;
+
+    const generatedResult = await model.generateContent([
+      generationPrompt,
+      {
+        inlineData: {
+          data: imageBase64,
+          mimeType: req.file.mimetype
+        }
+      }
+    ]);
+    
+    fs.unlinkSync(imagePath);
+
+    // Extract image data from response
+    const response = generatedResult.response;
+    let generatedImageData = null;
+    
+    if (response.candidates && response.candidates[0] && response.candidates[0].content) {
+      const content = response.candidates[0].content;
+      
+      if (content.parts) {
+        for (const part of content.parts) {
+          if (part.inlineData && part.inlineData.data) {
+            generatedImageData = part.inlineData.data;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!generatedImageData) {
+      return res.status(500).json({ error: 'No image generated by the model' });
+    }
+
+    res.json({
+      generatedImageData: generatedImageData
+    });
+
+  } catch (error) {
+    console.error('Error:', error);
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    res.status(500).json({ error: 'Failed to process image: ' + error.message });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`ClimaTime Machine server running on http://localhost:${PORT}`);
+  console.log('Make sure to set GEMINI_API_KEY environment variable');
+});
