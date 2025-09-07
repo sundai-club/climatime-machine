@@ -508,25 +508,16 @@
 
                 futurePhoto.innerHTML = `
                     <div style="text-align: center; margin: 20px 0;">
-                        <img src="data:image/jpeg;base64,${data.mergedImageData}" 
-                             alt="Viral climate change comparison with social media title" 
+                        <img id="generatedImage" src="data:image/jpeg;base64,${data.mergedImageData}" 
+                             alt="Viral climate change comparison with embedded title" 
                              style="max-width: 100%; max-height: 800px; border: 3px solid var(--doom-red); 
                                     box-shadow: 0 0 40px rgba(204, 0, 0, 0.6), inset 0 0 20px rgba(0, 0, 0, 0.5);
                                     filter: contrast(1.1) saturate(1.2); border-radius: 10px;">
                     </div>
-                    <div style="text-align: center; margin-top: 20px; padding: 20px; background: rgba(204, 0, 0, 0.1); 
-                                border: 1px solid rgba(204, 0, 0, 0.3); border-radius: 10px;">
-                        <h4 style="color: var(--warning-amber); font-family: 'Orbitron', monospace; font-size: 1.1em; 
-                                   text-transform: uppercase; letter-spacing: 0.1em; margin: 10px 0;">
-                            🔥 Generated Viral Title:
-                        </h4>
-                        <p style="color: #ff9999; font-family: 'Rajdhani', sans-serif; font-size: 1.2em; 
-                                  font-weight: 600; margin: 10px 0; text-shadow: 0 0 5px rgba(255, 153, 153, 0.5);">
-                            "${data.socialMediaTitle || 'Climate Change Impact'}"
-                        </p>
-                        <p style="color: var(--storm-gray); font-size: 0.9em; opacity: 0.8; margin-top: 15px;">
-                            Ready to share on social media! The title is already embedded in the image.
-                        </p>
+                    <div style="text-align: center; margin: 20px 0;">
+                        <button class="btn" id="downloadBtn" onclick="downloadImage('data:image/jpeg;base64,${data.mergedImageData}')">
+                            Download Image
+                        </button>
                     </div>
                 `;
 
@@ -546,6 +537,18 @@
         
         function startApocalypseCounter() {
             // Simplified - no counter needed
+        }
+        
+        function downloadImage(dataUrl) {
+            // Create a temporary link element
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = 'climate-change-comparison.jpg';
+            
+            // Append to body, click, and remove
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
     </script>
 </body>

@@ -92,9 +92,9 @@ async function addTextOverlay(imageBuffer, title, originalHeight) {
       .replace(/"/g, '')
       .replace(/'/g, '');
     
-    // Position title at the transition between original and generated image (top of generated image)
-    const titleY = originalHeight + (fontSize + padding);
+    // Position title on top of generated image, not overlapping original
     const backgroundY = originalHeight;
+    const titleY = originalHeight + fontSize + padding;
     
     // Create text SVG with background positioned between images
     const textSvg = `
@@ -220,16 +220,16 @@ Keep the people recognizable with their EXACT original poses, but allow them to 
 - Clothing can appear more worn, dirty, or weather-appropriate for the harsh conditions
 - Facial expressions can show the reality of living in this climate-changed world
 - Let environmental effects (dust, rain, heat distortion, shadows) naturally affect the people
-- People should feel integrated into the climate-changed environment while maintaining their exact original poses
+- People should feel integrated into the apocalyptic environment while maintaining their exact original poses
 
 Transform the ENVIRONMENT dramatically:
-- Same composition but showing clear climate change impacts
-- Show dramatic but realistic climate effects: heat waves with shimmering air, visible flooding or high water levels, drought with dried landscapes, intense storms, wildfire smoke, or pollution haze
-- Make the environment clearly changed but not completely devastated - people can still exist there but conditions are obviously harsh
-- Add realistic climate change effects that are severe but not apocalyptic
-- The lighting, atmosphere, and environmental conditions should show the strain of climate change
+- Same composition but climate-devastated surroundings
+- Show dramatic climate change impacts (extreme weather, rising seas, drought, storms, flooding, wildfires, pollution)
+- Make the environment look apocalyptic and devastated
+- Add realistic environmental damage and extreme weather effects
+- The lighting, atmosphere, and environmental conditions should affect everything in the scene
 
-Create a cohesive scene where the people still live in this climate-changed world but are clearly dealing with harsh environmental conditions.
+Create a cohesive scene where the people belong in this climate-changed world while remaining recognizable.
 
 TASK 2 - Create a SHORT, PROVOCATIVE viral title for this climate change comparison:
 - Maximum 40 characters (VERY SHORT)
