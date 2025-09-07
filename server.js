@@ -233,12 +233,17 @@ Keep the people recognizable with their EXACT original poses, but allow them to 
 - Let environmental effects (dust, rain, heat distortion, shadows) naturally affect the people
 - People should feel integrated into the apocalyptic environment while maintaining their exact original poses
 
-Transform the ENVIRONMENT dramatically:
+Transform the ENVIRONMENT dramatically with DIVERSE climate scenarios:
 - Same composition but climate-devastated surroundings
-- Show dramatic climate change impacts (extreme weather, rising seas, drought, storms, flooding, wildfires, pollution)
-- Make the environment look apocalyptic and devastated
-- Add realistic environmental damage and extreme weather effects
-- The lighting, atmosphere, and environmental conditions should affect everything in the scene
+- VARY the climate disaster based on location - don't always use drought/sand:
+  * Coastal areas: Massive flooding, storm surge, underwater cities, dark stormy skies
+  * Forest/mountains: Raging wildfires, smoke-filled orange/red skies, burned landscapes  
+  * Urban areas: Toxic pollution, acid rain, smog-filled green/gray atmosphere
+  * Cold regions: Extreme ice storms, frozen wasteland, white-out blizzards
+  * Tropical: Devastating hurricanes, fallen trees, wind damage, dark purple storm clouds
+- Make the environment look apocalyptic with VARIED color palettes and weather
+- Add realistic environmental damage matching the specific climate threat
+- Use diverse lighting: storm darkness, fire glow, flood reflections, smog filters, ice glare
 
 Create a cohesive scene where the people belong in this climate-changed world while remaining recognizable.
 
