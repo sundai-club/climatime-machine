@@ -101,10 +101,12 @@ async function addTextOverlay(imageBuffer, title, originalHeight) {
       .replace(/"/g, '')
       .replace(/'/g, '');
     
-    // Position title lower - completely on generated image, not overlapping original
-    const backgroundY = originalHeight + padding;
-    const titleY = originalHeight + fontSize + (padding * 2);
-    
+    // Position title closer to the middle border between images
+    // const backgroundY = originalHeight - (padding / 2);
+    // const titleY = originalHeight + fontSize;
+    const backgroundY = originalHeight
+    const titleY = originalHeight + fontSize + padding;
+
     // Create text SVG with background positioned between images
     const textSvg = `
       <svg width="${width}" height="${height}">
