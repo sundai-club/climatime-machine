@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClimaTime Machine</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --climate-blue: #1e3a8a;
+            --storm-gray: #64748b;
+            --flood-teal: #0891b2;
+            --drought-brown: #a16207;
+            --warning-amber: #f59e0b;
+            --ice-blue: #0ea5e9;
+            --dark-slate: #1e293b;
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: 
+                radial-gradient(circle at 20% 80%, var(--climate-blue) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, var(--storm-gray) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, var(--flood-teal) 0%, transparent 50%),
+                linear-gradient(135deg, var(--dark-slate) 0%, #000000 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(255, 102, 0, 0.03) 2px,
+                    rgba(255, 102, 0, 0.03) 4px
+                ),
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(204, 0, 0, 0.03) 2px,
+                    rgba(204, 0, 0, 0.03) 4px
+                );
+            pointer-events: none;
+            z-index: 1;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .main-panel {
+            background: 
+                linear-gradient(145deg, rgba(13, 13, 13, 0.95), rgba(44, 44, 44, 0.85)),
+                radial-gradient(circle at center, rgba(204, 0, 0, 0.1), transparent);
+            border: 2px solid rgba(255, 102, 0, 0.3);
+            border-radius: 0;
+            padding: 40px;
+            backdrop-filter: blur(15px) saturate(180%);
+            box-shadow: 
+                0 0 50px rgba(204, 0, 0, 0.3),
+                inset 0 0 50px rgba(255, 102, 0, 0.05),
+                0 20px 40px rgba(0, 0, 0, 0.8);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .main-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, 
+                transparent, 
+                var(--doom-red), 
+                var(--toxic-orange), 
+                var(--warning-yellow), 
+                var(--toxic-orange), 
+                var(--doom-red), 
+                transparent
+            );
+            animation: scanline 3s linear infinite;
+        }
+        
+        @keyframes scanline {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        h1 {
+            font-family: 'Orbitron', monospace;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.4em;
+            font-weight: 900;
+            color: var(--warning-amber);
+            text-shadow: 
+                0 0 10px rgba(30, 58, 138, 0.5),
+                0 0 20px rgba(100, 116, 139, 0.3),
+                0 0 30px rgba(245, 158, 11, 0.2);
+            letter-spacing: 0.1em;
+            animation: pulse-glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes pulse-glow {
+            from { 
+                filter: drop-shadow(0 0 5px rgba(30, 58, 138, 0.8));
+                transform: scale(1);
+            }
+            to { 
+                filter: drop-shadow(0 0 15px rgba(100, 116, 139, 0.8));
+                transform: scale(1.02);
+            }
+        }
+        .subtitle {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+            font-weight: 500;
+            color: var(--warning-amber);
+            text-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+            letter-spacing: 0.05em;
+        }
+        
+        .warning-text {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: rgba(204, 0, 0, 0.1);
+            border: 1px solid rgba(204, 0, 0, 0.3);
+            border-radius: 0;
+            font-size: 0.95em;
+            color: #ff9999;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 600;
+            position: relative;
+        }
+        
+        .warning-text::before {
+            content: '⚠️ CLIMATE EMERGENCY SIMULATION ⚠️';
+            display: block;
+            color: var(--warning-yellow);
+            font-weight: 700;
+            margin-bottom: 10px;
+            animation: blink 1.5s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+        .upload-area {
+            border: 2px dashed rgba(255, 102, 0, 0.5);
+            border-radius: 0;
+            padding: 50px;
+            text-align: center;
+            margin: 30px 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: 
+                radial-gradient(circle at center, rgba(204, 0, 0, 0.05), transparent),
+                linear-gradient(135deg, rgba(26, 26, 26, 0.8), rgba(44, 44, 44, 0.6));
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .upload-area::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(255, 102, 0, 0.1), transparent);
+            animation: rotate 4s linear infinite;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .upload-area:hover {
+            border-color: var(--toxic-orange);
+            box-shadow: 
+                0 0 30px rgba(255, 102, 0, 0.4),
+                inset 0 0 30px rgba(204, 0, 0, 0.1);
+            transform: scale(1.02);
+        }
+        
+        .upload-area:hover::before {
+            opacity: 1;
+        }
+        
+        .upload-area.dragover {
+            border-color: var(--doom-red);
+            background: rgba(204, 0, 0, 0.2);
+            box-shadow: 0 0 40px rgba(204, 0, 0, 0.6);
+            transform: scale(1.05);
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .upload-icon {
+            font-size: 4em;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 0 10px rgba(255, 102, 0, 0.5));
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        .upload-area h3 {
+            font-family: 'Orbitron', monospace;
+            color: var(--toxic-orange);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .upload-area p {
+            color: #cccccc;
+            font-weight: 500;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        .btn {
+            font-family: 'Orbitron', monospace;
+            background: linear-gradient(45deg, var(--doom-red), var(--toxic-orange));
+            color: white;
+            padding: 15px 35px;
+            border: 2px solid rgba(255, 102, 0, 0.5);
+            border-radius: 0;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 700;
+            margin: 15px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            box-shadow: 
+                0 0 20px rgba(204, 0, 0, 0.3),
+                inset 0 0 20px rgba(255, 102, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        .btn:hover {
+            background: linear-gradient(45deg, var(--toxic-orange), var(--warning-yellow));
+            border-color: var(--warning-yellow);
+            box-shadow: 
+                0 0 30px rgba(255, 102, 0, 0.6),
+                0 0 50px rgba(255, 204, 0, 0.3);
+            transform: translateY(-3px) scale(1.05);
+        }
+        
+        .btn:hover::before {
+            left: 100%;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .preview {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .preview img {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            background: rgba(13, 13, 13, 0.9);
+            border: 1px solid var(--doom-red);
+            border-radius: 0;
+            margin: 30px 0;
+        }
+        
+        .loading h3 {
+            font-family: 'Orbitron', monospace;
+            color: var(--doom-red);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 20px;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 102, 0, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid var(--doom-red);
+            border-right: 4px solid var(--warning-yellow);
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 30px auto;
+            box-shadow: 
+                0 0 20px rgba(204, 0, 0, 0.3),
+                inset 0 0 20px rgba(255, 102, 0, 0.1);
+        }
+        
+        .apocalypse-counter {
+            font-family: 'Orbitron', monospace;
+            color: var(--warning-yellow);
+            font-size: 1.2em;
+            margin-top: 20px;
+            text-align: center;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .result {
+            margin-top: 40px;
+            padding: 30px;
+            background: 
+                linear-gradient(145deg, rgba(13, 13, 13, 0.95), rgba(139, 69, 19, 0.1)),
+                radial-gradient(circle, rgba(204, 0, 0, 0.05), transparent);
+            border: 2px solid rgba(204, 0, 0, 0.4);
+            border-radius: 0;
+            box-shadow: 
+                0 0 30px rgba(204, 0, 0, 0.3),
+                inset 0 0 30px rgba(255, 102, 0, 0.05);
+        }
+        .error {
+            background: rgba(204, 0, 0, 0.3);
+            border: 2px solid var(--doom-red);
+            color: #ffcccc;
+            padding: 25px;
+            border-radius: 0;
+            margin: 30px 0;
+            font-family: 'Orbitron', monospace;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            box-shadow: 0 0 30px rgba(204, 0, 0, 0.4);
+            animation: error-pulse 2s infinite;
+        }
+        
+        @keyframes error-pulse {
+            0%, 100% { box-shadow: 0 0 30px rgba(204, 0, 0, 0.4); }
+            50% { box-shadow: 0 0 50px rgba(204, 0, 0, 0.7); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-panel">
+            <h1>🌍 ClimaTime Machine 🌍</h1>
+            <p class="subtitle">2045 Climate Vision</p>
+        
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">🌍</div>
+                <h3>Upload Photo</h3>
+                <input type="file" id="photoInput" accept="image/*">
+                <button class="btn" id="chooseBtn">
+                    Choose File
+                </button>
+            </div>
+
+            <div class="preview" id="preview" style="display: none;">
+                <h3 style="color: var(--warning-amber); font-family: 'Orbitron', monospace;">Original</h3>
+                <img id="previewImage" src="" alt="Preview" style="border: 2px solid var(--toxic-orange); box-shadow: 0 0 20px rgba(255, 102, 0, 0.3);">
+                <br>
+                <button class="btn" id="generateBtn" onclick="generateFuturePhoto()">
+                    Generate Future
+                </button>
+            </div>
+
+            <div class="loading" id="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p style="color: var(--storm-gray); font-weight: 500;">Processing...</p>
+            </div>
+
+            <div class="result" id="result" style="display: none;">
+                <div id="futurePhoto"></div>
+            </div>
+
+            <div class="error" id="error" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const photoInput = document.getElementById('photoInput');
+        const preview = document.getElementById('preview');
+        const previewImage = document.getElementById('previewImage');
+        const generateBtn = document.getElementById('generateBtn');
+        const loading = document.getElementById('loading');
+        const result = document.getElementById('result');
+        const futurePhoto = document.getElementById('futurePhoto');
+        const error = document.getElementById('error');
+
+        let selectedFile = null;
+
+        // Drag and drop functionality
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        document.getElementById('chooseBtn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            photoInput.click();
+        });
+
+        photoInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                showError('Please select an image file');
+                return;
+            }
+
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImage.src = e.target.result;
+                preview.style.display = 'block';
+                result.style.display = 'none';
+                error.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function generateFuturePhoto() {
+            if (!selectedFile) return;
+
+            generateBtn.disabled = true;
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            error.style.display = 'none';
+            
+            // Add apocalyptic countdown
+            startApocalypseCounter();
+
+            const formData = new FormData();
+            formData.append('photo', selectedFile);
+
+            try {
+                const response = await fetch('/analyze-and-generate', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to process image');
+                }
+
+                futurePhoto.innerHTML = `
+                    <h3 style="color: var(--doom-red); font-family: 'Orbitron', monospace; text-align: center; margin: 30px 0;">
+                        2045
+                    </h3>
+                    <div style="text-align: center; margin: 20px 0;">
+                        <img src="data:image/jpeg;base64,${data.generatedImageData}" 
+                             alt="Climate-changed future photo" 
+                             style="max-width: 100%; max-height: 600px; border: 3px solid var(--doom-red); 
+                                    box-shadow: 0 0 40px rgba(204, 0, 0, 0.6), inset 0 0 20px rgba(0, 0, 0, 0.5);
+                                    filter: contrast(1.1) saturate(1.2);">
+                    </div>
+                `;
+
+                result.style.display = 'block';
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                loading.style.display = 'none';
+                generateBtn.disabled = false;
+            }
+        }
+
+        function showError(message) {
+            error.innerHTML = `<p>${message}</p>`;
+            error.style.display = 'block';
+        }
+        
+        function startApocalypseCounter() {
+            // Simplified - no counter needed
+        }
+    </script>
+</body>
+</html>
