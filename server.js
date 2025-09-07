@@ -65,16 +65,38 @@ function analyzeWeatherConditions(description) {
   return 'extreme climate change effects with rising sea levels and environmental devastation';
 }
 
-async function addTextOverlay(imageBuffer, title) {
+async function addTextOverlay(imageBuffer, title, originalHeight) {
   try {
     const image = sharp(imageBuffer);
     const { width, height } = await image.metadata();
     
-    // Calculate text size and position
-    const fontSize = Math.max(24, Math.min(width / 20, 48));
-    const padding = Math.max(15, width / 80);
+    // Get average color from the bottom portion (generated image area)
+    const bottomPortionBuffer = await sharp(imageBuffer)
+      .extract({ left: 0, top: originalHeight, width: width, height: height - originalHeight })
+      .toBuffer();
+    const { dominant } = await sharp(bottomPortionBuffer).stats();
+    const avgColor = `rgb(${Math.round(dominant.r)}, ${Math.round(dominant.g)}, ${Math.round(dominant.b)})`;
     
-    // Create text SVG with background
+    // Calculate text size based on title length and image width - make title much larger
+    const titleLength = title.length;
+    const baseFontSize = Math.min(width / 8, 120); // Much larger base size
+    const fontSizeAdjustment = titleLength > 30 ? 0.8 : titleLength > 20 ? 0.9 : 1.0; // Smaller font for longer titles
+    const fontSize = Math.max(48, baseFontSize * fontSizeAdjustment);
+    const padding = Math.max(25, width / 40);
+    
+    // Clean title - remove problematic characters for SVG
+    const cleanTitle = title
+      .replace(/&/g, 'and')
+      .replace(/</g, '')
+      .replace(/>/g, '')
+      .replace(/"/g, '')
+      .replace(/'/g, '');
+    
+    // Position title at the transition between original and generated image (top of generated image)
+    const titleY = originalHeight + (fontSize + padding);
+    const backgroundY = originalHeight;
+    
+    // Create text SVG with background positioned between images
     const textSvg = `
       <svg width="${width}" height="${height}">
         <defs>
@@ -83,26 +105,19 @@ async function addTextOverlay(imageBuffer, title) {
           </filter>
         </defs>
         
-        <!-- Background rectangle with gradient -->
-        <rect x="0" y="0" width="${width}" height="${fontSize + padding * 2}" 
-              fill="url(#grad)" fill-opacity="0.9"/>
-        <defs>
-          <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" style="stop-color:#cc0000;stop-opacity:0.9" />
-            <stop offset="50%" style="stop-color:#ff6600;stop-opacity:0.95" />
-            <stop offset="100%" style="stop-color:#ffcc00;stop-opacity:0.9" />
-          </linearGradient>
-        </defs>
+        <!-- Background rectangle with image-based color between images -->
+        <rect x="0" y="${backgroundY}" width="${width}" height="${fontSize + padding * 2}" 
+              fill="${avgColor}" fill-opacity="0.4"/>
         
-        <!-- Main title text -->
-        <text x="${width / 2}" y="${fontSize + padding}" 
+        <!-- Main title text between images -->
+        <text x="${width / 2}" y="${titleY}" 
               font-family="Arial, sans-serif" 
               font-size="${fontSize}" 
               font-weight="bold" 
               text-anchor="middle" 
               fill="white" 
               filter="url(#shadow)">
-          ${title.toUpperCase()}
+          ${cleanTitle.toUpperCase()}
         </text>
       </svg>
     `;
@@ -132,95 +147,45 @@ async function mergeImages(originalBuffer, generatedBase64, title = null) {
     const originalMeta = await sharp(originalBuffer).metadata();
     const generatedMeta = await sharp(generatedBuffer).metadata();
     
-    // Calculate dimensions to maintain aspect ratio
+    // Keep original dimensions and aspect ratios
     const originalWidth = originalMeta.width;
     const originalHeight = originalMeta.height;
     const generatedWidth = generatedMeta.width;
     const generatedHeight = generatedMeta.height;
     
-    // Determine if we should join horizontally or vertically
-    // Use the longer side to join for better proportions
-    const useHorizontal = originalWidth >= originalHeight;
+    // Resize generated image to match original's width while maintaining aspect ratio
+    const generatedAspectRatio = generatedWidth / generatedHeight;
+    const resizedGeneratedHeight = Math.round(originalWidth / generatedAspectRatio);
     
-    let targetWidth, targetHeight, resizedOriginal, resizedGenerated;
+    const resizedGenerated = await sharp(generatedBuffer)
+      .resize({ width: originalWidth, height: resizedGeneratedHeight })
+      .toBuffer();
     
-    if (useHorizontal) {
-      // Join horizontally - make heights equal, maintain aspect ratios
-      targetHeight = Math.min(originalHeight, generatedHeight);
-      
-      resizedOriginal = await sharp(originalBuffer)
-        .resize({ height: targetHeight, withoutEnlargement: true })
-        .toBuffer();
-      
-      resizedGenerated = await sharp(generatedBuffer)
-        .resize({ height: targetHeight, withoutEnlargement: true })
-        .toBuffer();
-      
-      const originalResizedMeta = await sharp(resizedOriginal).metadata();
-      const generatedResizedMeta = await sharp(resizedGenerated).metadata();
-      
-      targetWidth = originalResizedMeta.width + generatedResizedMeta.width;
-      
-      // Create merged image horizontally
-      const mergedImage = await sharp({
-        create: {
-          width: targetWidth,
-          height: targetHeight,
-          channels: 3,
-          background: { r: 0, g: 0, b: 0 }
-        }
-      })
-      .composite([
-        { input: resizedOriginal, left: 0, top: 0 },
-        { input: resizedGenerated, left: originalResizedMeta.width, top: 0 }
-      ])
-      .jpeg({ quality: 90 })
-      .toBuffer();
-      
-      // Add title overlay if provided
-      if (title) {
-        return await addTextOverlay(mergedImage, title);
+    // Final dimensions: same width as original, combined heights
+    const targetWidth = originalWidth;
+    const targetHeight = originalHeight + resizedGeneratedHeight;
+    
+    // Create merged image vertically (original top, resized generated bottom)
+    const mergedImage = await sharp({
+      create: {
+        width: targetWidth,
+        height: targetHeight,
+        channels: 3,
+        background: { r: 0, g: 0, b: 0 }
       }
-      return mergedImage;
-    } else {
-      // Join vertically - make widths equal, maintain aspect ratios
-      targetWidth = Math.min(originalWidth, generatedWidth);
-      
-      resizedOriginal = await sharp(originalBuffer)
-        .resize({ width: targetWidth, withoutEnlargement: true })
-        .toBuffer();
-      
-      resizedGenerated = await sharp(generatedBuffer)
-        .resize({ width: targetWidth, withoutEnlargement: true })
-        .toBuffer();
-      
-      const originalResizedMeta = await sharp(resizedOriginal).metadata();
-      const generatedResizedMeta = await sharp(resizedGenerated).metadata();
-      
-      targetHeight = originalResizedMeta.height + generatedResizedMeta.height;
-      
-      // Create merged image vertically
-      const mergedImage = await sharp({
-        create: {
-          width: targetWidth,
-          height: targetHeight,
-          channels: 3,
-          background: { r: 0, g: 0, b: 0 }
-        }
-      })
-      .composite([
-        { input: resizedOriginal, left: 0, top: 0 },
-        { input: resizedGenerated, left: 0, top: originalResizedMeta.height }
-      ])
-      .jpeg({ quality: 90 })
-      .toBuffer();
-      
-      // Add title overlay if provided
-      if (title) {
-        return await addTextOverlay(mergedImage, title);
-      }
-      return mergedImage;
+    })
+    .composite([
+      { input: originalBuffer, left: 0, top: 0 },
+      { input: resizedGenerated, left: 0, top: originalHeight }
+    ])
+    .jpeg({ quality: 90 })
+    .toBuffer();
+    
+    // Add title overlay if provided
+    if (title) {
+      return await addTextOverlay(mergedImage, title, originalHeight);
     }
+    return mergedImage;
   } catch (error) {
     console.error('Error merging images:', error);
     throw error;
@@ -255,24 +220,26 @@ Keep the people recognizable with their EXACT original poses, but allow them to 
 - Clothing can appear more worn, dirty, or weather-appropriate for the harsh conditions
 - Facial expressions can show the reality of living in this climate-changed world
 - Let environmental effects (dust, rain, heat distortion, shadows) naturally affect the people
-- People should feel integrated into the apocalyptic environment while maintaining their exact original poses
+- People should feel integrated into the climate-changed environment while maintaining their exact original poses
 
 Transform the ENVIRONMENT dramatically:
-- Same composition but climate-devastated surroundings
-- Show dramatic climate change impacts (extreme weather, rising seas, drought, storms, flooding, wildfires, pollution)
-- Make the environment look apocalyptic and devastated
-- Add realistic environmental damage and extreme weather effects
-- The lighting, atmosphere, and environmental conditions should affect everything in the scene
+- Same composition but showing clear climate change impacts
+- Show dramatic but realistic climate effects: heat waves with shimmering air, visible flooding or high water levels, drought with dried landscapes, intense storms, wildfire smoke, or pollution haze
+- Make the environment clearly changed but not completely devastated - people can still exist there but conditions are obviously harsh
+- Add realistic climate change effects that are severe but not apocalyptic
+- The lighting, atmosphere, and environmental conditions should show the strain of climate change
 
-Create a cohesive scene where the people belong in this climate-changed world while remaining recognizable.
+Create a cohesive scene where the people still live in this climate-changed world but are clearly dealing with harsh environmental conditions.
 
-TASK 2 - Create a catchy, viral social media title for this before/after climate change comparison:
-- Should be short (under 60 characters)
-- Make it shocking, emotional, or thought-provoking
-- Use action words and urgency
-- Examples: "Your Vacation Spot in 2045 😱", "This Is What Climate Change Looks Like", "20 Years From Now: Still Going Here?"
-- Focus on the transformation and impact
-- Make it shareable and attention-grabbing
+TASK 2 - Create a SHORT, PROVOCATIVE viral title for this climate change comparison:
+- Maximum 40 characters (VERY SHORT)
+- Make it SHOCKING and provocative
+- Use powerful, urgent words
+- Examples: "Your Paradise Lost", "Still Going Here?", "Before Climate Hits", "This Changes Everything"
+- Focus on loss, urgency, and personal impact
+- Vary the structure - questions, statements, warnings
+- Make people stop scrolling and share
+- NO EMOJIS - powerful words only
 
 Please provide your response as:
 TITLE: [your catchy title here]
