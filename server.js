@@ -14,6 +14,15 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
+// Health check endpoint for Render
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'healthy',
+    geminiConfigured: !!process.env.GEMINI_API_KEY,
+    timestamp: new Date().toISOString()
+  });
+});
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadsDir = './uploads';

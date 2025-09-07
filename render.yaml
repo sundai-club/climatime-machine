@@ -12,4 +12,4 @@ services:
         sync: false
       - key: GEMINI_MODEL
         value: gemini-2.5-flash-image-preview
-    healthCheckPath: /
+    healthCheckPath: /health
