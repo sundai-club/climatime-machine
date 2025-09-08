@@ -86,12 +86,12 @@ async function addTextOverlay(imageBuffer, title, originalHeight) {
     const { dominant } = await sharp(bottomPortionBuffer).stats();
     const avgColor = `rgb(${Math.round(dominant.r)}, ${Math.round(dominant.g)}, ${Math.round(dominant.b)})`;
     
-    // Calculate text size based on title length and image width - make title much larger
+    // Calculate text size based on title length and image width - ensure it fits
     const titleLength = title.length;
-    const baseFontSize = Math.min(width / 10, 100); // Reduced base size for better fit
-    const fontSizeAdjustment = titleLength > 35 ? 0.7 : titleLength > 25 ? 0.8 : titleLength > 15 ? 0.9 : 1.0; // More aggressive scaling
-    const fontSize = Math.max(40, baseFontSize * fontSizeAdjustment);
-    const padding = Math.max(20, width / 50);
+    const baseFontSize = Math.min(width / 12, 80); // Further reduced for better fit
+    const fontSizeAdjustment = titleLength > 35 ? 0.6 : titleLength > 30 ? 0.7 : titleLength > 25 ? 0.75 : titleLength > 20 ? 0.85 : 1.0; // Much more aggressive scaling
+    const fontSize = Math.max(30, baseFontSize * fontSizeAdjustment);
+    const padding = Math.max(15, width / 60);
     
     // Clean title - remove problematic characters for SVG
     const cleanTitle = title
