@@ -219,14 +219,7 @@ app.post('/analyze-and-generate', upload.single('photo'), async (req, res) => {
     console.log('File received:', req.file.originalname, 'Size:', req.file.size);
 
     console.log('Initializing Gemini model:', modelName);
-    const model = genAI.getGenerativeModel({ 
-      model: modelName,
-      generationConfig: {
-        temperature: 1.2,
-        topP: 0.95,
-        topK: 40
-      }
-    });
+    const model = genAI.getGenerativeModel({ model: modelName });
 
     const imagePath = req.file.path;
     console.log('Reading image from:', imagePath);
