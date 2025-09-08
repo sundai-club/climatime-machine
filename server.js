@@ -88,10 +88,10 @@ async function addTextOverlay(imageBuffer, title, originalHeight) {
     
     // Calculate text size based on title length and image width - make title much larger
     const titleLength = title.length;
-    const baseFontSize = Math.min(width / 8, 120); // Much larger base size
-    const fontSizeAdjustment = titleLength > 30 ? 0.8 : titleLength > 20 ? 0.9 : 1.0; // Smaller font for longer titles
-    const fontSize = Math.max(48, baseFontSize * fontSizeAdjustment);
-    const padding = Math.max(25, width / 40);
+    const baseFontSize = Math.min(width / 10, 100); // Reduced base size for better fit
+    const fontSizeAdjustment = titleLength > 35 ? 0.7 : titleLength > 25 ? 0.8 : titleLength > 15 ? 0.9 : 1.0; // More aggressive scaling
+    const fontSize = Math.max(40, baseFontSize * fontSizeAdjustment);
+    const padding = Math.max(20, width / 50);
     
     // Clean title - remove problematic characters for SVG
     const cleanTitle = title
@@ -101,11 +101,9 @@ async function addTextOverlay(imageBuffer, title, originalHeight) {
       .replace(/"/g, '')
       .replace(/'/g, '');
     
-    // Position title closer to the middle border between images
-    // const backgroundY = originalHeight - (padding / 2);
-    // const titleY = originalHeight + fontSize;
-    const backgroundY = originalHeight
-    const titleY = originalHeight + fontSize + padding;
+    // Position title on the dividing line between images
+    const backgroundY = originalHeight - (fontSize / 2 + padding);
+    const titleY = originalHeight + (fontSize / 4); // Center text vertically on the border
 
     // Create text SVG with background positioned between images
     const textSvg = `
