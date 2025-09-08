@@ -101,9 +101,9 @@ async function addTextOverlay(imageBuffer, title, originalHeight) {
       .replace(/"/g, '')
       .replace(/'/g, '');
     
-    // Position title on the dividing line between images
-    const backgroundY = originalHeight - (fontSize / 2 + padding);
-    const titleY = originalHeight + (fontSize / 4); // Center text vertically on the border
+    // Position title on the generated image area
+    const backgroundY = originalHeight
+    const titleY = originalHeight + fontSize + padding;
 
     // Create text SVG with background positioned between images
     const textSvg = `
