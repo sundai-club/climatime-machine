@@ -219,7 +219,14 @@ app.post('/analyze-and-generate', upload.single('photo'), async (req, res) => {
     console.log('File received:', req.file.originalname, 'Size:', req.file.size);
 
     console.log('Initializing Gemini model:', modelName);
-    const model = genAI.getGenerativeModel({ model: modelName });
+    const model = genAI.getGenerativeModel({ 
+      model: modelName,
+      generationConfig: {
+        temperature: 1.2,
+        topP: 0.95,
+        topK: 40
+      }
+    });
 
     const imagePath = req.file.path;
     console.log('Reading image from:', imagePath);
@@ -230,7 +237,9 @@ app.post('/analyze-and-generate', upload.single('photo'), async (req, res) => {
     const originalImageBuffer = imageData;
     console.log('Image processed, size:', imageData.length, 'bytes');
 
-    const generationPrompt = `TASK 1 - Transform this image to show the same location 20 years in the future, dramatically affected by climate change.
+    // Add random seed to prompt for variation
+    const randomSeed = Math.floor(Math.random() * 10000);
+    const generationPrompt = `[Variation ${randomSeed}] TASK 1 - Transform this image to show the same location 20 years in the future, dramatically affected by climate change.
 
 Keep the people recognizable with their EXACT original poses, but allow them to blend and adapt to the climate-transformed surroundings:
 - Same faces and identical poses/body positions as the original photo
