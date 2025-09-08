@@ -543,7 +543,9 @@
             // Create a temporary link element
             const link = document.createElement('a');
             link.href = dataUrl;
-            link.download = 'climate-change-comparison.jpg';
+            // Add timestamp to filename
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            link.download = `climate-change-comparison-${timestamp}.jpg`;
             
             // Append to body, click, and remove
             document.body.appendChild(link);
